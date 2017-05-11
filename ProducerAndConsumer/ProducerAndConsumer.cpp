@@ -53,8 +53,8 @@ DWORD WINAPI concumer (LPVOID lpParameter)
 int main()
 {
 	HANDLE handle[2];
-	handle[0]=CreateThread(NULL,0,producer,NULL,0,NULL);//创建线程
+	handle[0]=CreateThread(NULL,0,producer,NULL,0,NULL);
 	handle[1]=CreateThread(NULL,0,concumer,NULL,0,NULL);
-	WaitForMultipleObjects(2,handle,TRUE,-1);//等待线程
+	WaitForMultipleObjects(2,handle,TRUE,-1);
 	return 0;
 }

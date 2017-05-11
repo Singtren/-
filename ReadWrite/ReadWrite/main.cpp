@@ -23,9 +23,10 @@ DWORD WINAPI Reader(LPVOID lpParameter)
 		readcount++;
 		signal(rmutex);
 		cout<<"Reading...\n";
-		Sleep(2000);
+		Sleep(1000);
 		wait(rmutex);
 		readcount--;
+		cout << "Finish reading.\n";
 		if(readcount==0)
 			signal(wmutex);
 		signal(rmutex);
@@ -40,6 +41,7 @@ DWORD WINAPI Writer(LPVOID lpParameter)
 		wait(wmutex);
 		cout<<"Writing...\n";
 		Sleep(3000);
+		cout << "Finish writing.\n";
 		signal(wmutex);
 	
 	}while(true);

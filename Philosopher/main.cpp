@@ -35,9 +35,9 @@ DWORD WINAPI P(LPVOID lpParameter)
 	do {
 		
 		Swait(chopstick[(*i + 1) % 5], chopstick[*i]);
-		cout << "第" << *i + 1 << "位哲学家开始进餐\n";
+		cout << "philosopher " << *i + 1 << " start eating\n";
 		Sleep(2000);		//eating
-		cout << "第" << *i + 1 << "位哲学家开始思考\n";
+		cout << "philosopher " << *i + 1 << " start thinking\n";
 		Sleep(100);//put down the chopsticks
 		Ssignal(chopstick[(*i + 1) % 5], chopstick[*i]);
 		Sleep(3000);		//thinking

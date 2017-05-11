@@ -1,0 +1,235 @@
+\documentclass[UTF8,a4paper]{ctexart}
+\usepackage{ulem}
+\usepackage[left=1.25in,right=1.25in,top=1in,bottom=1in]{geometry}
+\usepackage{listings}
+\usepackage{enumitem}
+\newfontfamily\courier{Courier New}
+\newfontfamily\courierb{Courier New Bold}
+\lstset{
+language=C++,
+columns=fullflexiblem,
+breaklines=true,
+%numbers=left,%在左侧显示行号
+frame=none,%不显示背景边框
+backgroundcolor=\color[RGB]{245,245,244},%设定背景颜色
+keywordstyle=\courierb,%设定关键字颜色
+%numberstyle=\consolas\color{darkgray},%设定行号格式
+%commentstyle=\color[RGB]{0,96,96},%设置代码注释的格式
+%stringstyle=\color{myorange},%设置字符串格式
+showstringspaces=false,%不显示字符串中的空格
+basicstyle=\courier,%\color{mygreen},
+extendedchars=false 
+}
+\linespread{1}
+\begin{document}
+\pagestyle{plain}
+  \centerline{\bfseries\zihao{3}南京信息工程大学\ 操作系统\ 实验报告}
+  \zihao{5}
+  \begin{center}
+    实验名称 \uline{\enskip 操作系统 \enskip }日期 \uline{\enskip 2015/5/10\enskip}得分 \uline{\qquad\qquad}  指导教师 \uline{\enskip 毕硕本 \enskip}
+  \end{center}
+  \begin{center}
+    系 \uline{\enskip 理学系 \enskip} 专业 \uline{\enskip 信息与计算科学 \enskip} 班级 \uline{\enskip 1 \enskip}
+    姓名 \uline{\enskip 王星晨 \enskip } 学号 \uline{\enskip 20152314026 \enskip}
+  \end{center}
+  \zihao{-4}
+  {\noindent\zihao{4}\bfseries{1.实验目的}}
+\begin{itemize}
+\item 理解进程同步的信号量机制
+\item 学会用C/C++实现进程同步的信号量机制
+\item 学会利用信号量机制解决经典的进程同步问题
+\item 学会调用操作系统API函数创建进程
+\end{itemize}
+
+ {\noindent\zihao{4}\bfseries{2.实验内容}}
+\begin{enumerate}[label=(\arabic*)]
+  \item 利用记录型信号量解决生产者 - 消费者问题
+  \item 利用AND信号量机制解决哲学家进餐问题
+  \item 利用记录型信号量解决读者写着问题
+\end{enumerate}
+
+{\noindent\zihao{4}\bfseries{3.实验思路}}
+
+1.生产者消费者问题
+假设生产者和消费者之间的公用缓冲池具有n个缓冲区,可以利用互斥信号量mutex实现诸进程对缓冲池的使用;利用信号量empty和full 分别表示缓冲池中空缓冲区和满缓冲区数量。又假定这些生产者和消费者相互等效，只要缓冲池未满，生产者便可将消息送入缓冲池;只要缓冲池位空，消费者便可从缓冲池中取走一个消息。
+定义信号量类型semaphore为整型。为了方便,假设生产的产品为一个随机整数,则item 类型定义为整型。程序的变量和类型定义为
+\begin{lstlisting}
+const int n=5;//缓冲区数量规定为5
+int in=0,out=0;
+typedef int item;
+typedef int semaphore;
+semaphore mutex=1,Empty=n,full=0;
+item buffer[n];
+\end{lstlisting}
+对于P,V操作,定义为
+\begin{lstlisting}
+void wait (semaphore &S)
+{
+	while(S<=0);
+	S--;
+}
+void signal (semaphore &S)
+{
+	S++;
+}
+\end{lstlisting}
+producer和consumer是两个同时进行的进程,需要调用操作系统API来实现.
+为了方便，调用CreateThread函数创建producer和consumer线程来模拟进程.
+\begin{lstlisting}
+HANDLE handle[2];
+handle[0]=CreateThread(NULL,0,producer,NULL,0,NULL);
+handle[1]=CreateThread(NULL,0,concumer,NULL,0,NULL);
+WaitForMultipleObjects(2,handle,TRUE,-1);
+\end{lstlisting}
+
+2.哲学家进餐问题
+
+在哲学家进餐问题中,要求每个哲学家先获得两个临界资源(筷子)后方能进餐,这在本质上是AND同步问题。故用AND信号量机制可获得最简洁的解法。
+Swait和Ssignal定义如下
+\begin{lstlisting}
+  int Swait(semaphore &S1, semaphore &S2)
+{
+	while (true)
+	{
+		if (S1 >= 1 && S2 >= 1)
+		{
+			S1--;
+			S2--;
+			break;
+
+		}
+		else
+		{
+			;
+		}
+
+	}
+	return 0;
+}
+int Ssignal(semaphore &S1, semaphore &S2)
+{
+	S1++;
+	S2++;
+
+	return 0;
+}
+\end{lstlisting}
+
+3.读者 - 写者问题
+
+为实现Reader与Writer进程间在读或写的互斥而设置一个互斥信号量wmutex.另外，再设置一个整型变量readcount表示在读的进程数目。由于只要有一个Reader进程在读，便不允许Writer进程去写。因此，仅当readcount=0,表示尚无Reader进程在读时，Reader 进程才需执行wait(wmutex)操作。若wait(wmutex)操作成功，Reader进程便可去读，相应的，做readcount+1操作。同理，仅当Reader进程在执行了readcount减1操作后其值为0时，才需执行signal(wmutex)操作，以便让Writer进程写操作。又因为readcount是一个可被多个Reader进程访问的资源，因此，也应该为它设置一个互斥信号量mutex.
+
+  {\noindent\zihao{4}\bfseries{4.实验步骤}}
+  
+\noindent 1.生产者消费者问题
+\begin{enumerate}[label=(\arabic*)]
+\item 打开Visual Studio ,建立C++项目，添加ProducerAndConsumer.cpp文件
+\item 编写生产者消费者程序代码
+\item 调试运行
+\end{enumerate}
+\noindent 2.哲学家进餐问题
+\begin{enumerate}[label=(\arabic*)]
+\item 打开Visual Studio ,建立C++项目，添加Philosopher.cpp文件
+\item 编写哲学家进餐问题程序代码
+\item 调试运行
+\end{enumerate}
+\noindent 3.读者写着问题
+\begin{enumerate}[label=(\arabic*)]
+\item 打开Visual Studio ,建立C++项目，添加ReadWrite.cpp文件
+\item 编写读者写者问题程序代码
+\item 调试运行
+\end{enumerate}
+    {\noindent\zihao{4}\bfseries{5.调试结果}}
+
+\noindent 1.消费者生产者问题
+
+\centerline{程序在屏幕的部分输出结果}
+\begin{lstlisting}[frame=shadowbox,backgroundcolor=\color{white}]
+producer an item: 41 in buffer 0
+concumer an item: 41 in buffer 0
+producer an item: 18467 in buffer 1
+concumer an item: 18467 in buffer 1
+producer an item: 6334 in buffer 2
+concumer an item: 6334 in buffer 2
+producer an item: 26500 in buffer 3
+concumer an item: 26500 in buffer 3
+producer an item: 19169 in buffer 4
+concumer an item: 19169 in buffer 4
+producer an item: 15724 in buffer 0
+concumer an item: 15724 in buffer 0
+producer an item: 11478 in buffer 1
+concumer an item: 11478 in buffer 1
+producer an item: 29358 in buffer 2
+concumer an item: 29358 in buffer 2
+producer an item: 26962 in buffer 3
+concumer an item: 26962 in buffer 3
+\end{lstlisting}
+
+producer不断产生产品(整数)放入缓冲区buffer[i],consumer不断在缓冲区buffer消费产品
+
+\noindent 2.哲学家进餐问题
+
+\centerline{程序在屏幕的部分输出结果}
+\begin{lstlisting}[frame=shadowbox,backgroundcolor=\color{white}]
+philosopher 1 start eating
+philosopher 3 start eating
+philosopher 1 start thinking
+philosopher 5 start eating
+philosopher 3 start thinking
+philosopher 2 start eating
+philosopher 5 start thinking
+philosopher 4 start eating
+philosopher 2 start thinking
+philosopher 1 start eating
+philosopher 4 start thinking
+philosopher 3 start eating
+philosopher 1 start thinking
+philosopher 5 start eating
+philosopher 3 start thinking
+\end{lstlisting}
+
+相邻的哲学家是不能同时进餐的，5个哲学家最多只允许2个哲学家同时进餐,程序结果符合这个特点。
+
+\noindent 3.读者写者问题
+
+\centerline{程序在屏幕的部分输出结果}
+\begin{lstlisting}[frame=shadowbox,backgroundcolor=\color{white}]
+Reading...
+Finish reading.
+Writing...
+Finish writing.
+Reading...
+Finish reading.
+Writing...
+Finish writing.
+Reading...
+Finish reading.
+Writing...
+Finish writing.
+Reading...
+Finish reading.
+Writing...
+Finish writing.
+Reading...
+\end{lstlisting}
+
+读和写不能同时进行,程序结果符合这个特点.
+
+
+       {\noindent\zihao{4}\bfseries{6.代码附录}}
+       
+\noindent 1.生产者消费者问题 
+
+\centerline{ProducerAndConsumer.cpp}
+\lstinputlisting[language=C++]{../ProducerAndConsumer/ProducerAndConsumer.cpp}
+
+\noindent 2.哲学家进餐问题
+
+\centerline{Philosopher.cpp}
+\lstinputlisting[language=C++]{../Philosopher/main.cpp}
+
+\noindent 3.读者写者问题
+
+\centerline{ReadWrite.cpp}
+\lstinputlisting[language=C++]{../ReadWrite/ReadWrite/main.cpp}
+\end{document}
